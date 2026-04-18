@@ -1,4 +1,4 @@
-# next-caledar-select
+# next-calendar-select
 
 Reusable labeled date input calendar component for React and Next.js.
 
@@ -12,7 +12,7 @@ Reusable labeled date input calendar component for React and Next.js.
 ## Install
 
 ```bash
-npm install next-caledar-select
+npm install next-calendar-select
 ```
 
 Peer dependencies:
@@ -26,7 +26,7 @@ Peer dependencies:
 "use client";
 
 import { useState } from "react";
-import { LabeledInputCalendar } from "next-caledar-select";
+import { LabeledInputCalendar } from "next-calendar-select";
 
 export default function Example() {
   const [date, setDate] = useState("");
@@ -46,6 +46,16 @@ export default function Example() {
         applyDate: "Apply",
         cancel: "Cancel",
         today: "Today",
+      }}
+      colors={{
+        light: {
+          primary: "#0f766e",
+          onPrimary: "#ffffff",
+        },
+        dark: {
+          primary: "#14b8a6",
+          onPrimary: "#052e2b",
+        },
       }}
     />
   );
@@ -69,7 +79,50 @@ interface LabeledInputCalendarProps {
   locale?: string; // default: en-US
   isRTL?: boolean; // default: false
   texts?: Partial<LabeledInputCalendarTexts>;
+  colors?: LabeledInputCalendarColors;
 }
+
+interface LabeledInputCalendarColorPalette {
+  primary: string;
+  onPrimary: string;
+  surface: string;
+  onSurface: string;
+  surfaceVariant: string;
+  onSurfaceVariant: string;
+  outline: string;
+  error: string;
+  muted: string;
+  scrim: string;
+}
+
+interface LabeledInputCalendarColors {
+  light?: Partial<LabeledInputCalendarColorPalette>;
+  dark?: Partial<LabeledInputCalendarColorPalette>;
+}
+```
+
+## Color customization
+
+Pass `colors.light` and/or `colors.dark` to override any palette keys while keeping sensible defaults for the rest.
+
+```tsx
+<LabeledInputCalendar
+  name="deliveryDate"
+  value={date}
+  onChange={(e) => setDate(e.target.value)}
+  colors={{
+    light: {
+      primary: "#1d4ed8",
+      surface: "#ffffff",
+      onSurface: "#111827",
+    },
+    dark: {
+      primary: "#60a5fa",
+      surface: "#0b1220",
+      onSurface: "#e5e7eb",
+    },
+  }}
+/>
 ```
 
 ## Styling note
@@ -121,6 +174,6 @@ npm publish --access public
 
 ```bash
 git add .
-git commit -m "chore: prepare next-caledar-select package"
+git commit -m "chore: prepare next-calendar-select package"
 git push origin main
 ```

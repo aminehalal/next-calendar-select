@@ -15,6 +15,24 @@ export interface LabeledInputCalendarTexts {
   completeDate: string;
 }
 
+export interface LabeledInputCalendarColorPalette {
+  primary: string;
+  onPrimary: string;
+  surface: string;
+  onSurface: string;
+  surfaceVariant: string;
+  onSurfaceVariant: string;
+  outline: string;
+  error: string;
+  muted: string;
+  scrim: string;
+}
+
+export interface LabeledInputCalendarColors {
+  light?: Partial<LabeledInputCalendarColorPalette>;
+  dark?: Partial<LabeledInputCalendarColorPalette>;
+}
+
 export interface LabeledInputCalendarProps {
   label?: string;
   name: string;
@@ -29,6 +47,7 @@ export interface LabeledInputCalendarProps {
   locale?: string;
   isRTL?: boolean;
   texts?: Partial<LabeledInputCalendarTexts>;
+  colors?: LabeledInputCalendarColors;
 }
 
 const DEFAULT_TEXTS: LabeledInputCalendarTexts = {
@@ -41,6 +60,32 @@ const DEFAULT_TEXTS: LabeledInputCalendarTexts = {
   dateNotAvailable: "This date is not available.",
   enterValidDate: "Please enter a valid date.",
   completeDate: "Please complete day, month, and year.",
+};
+
+const DEFAULT_LIGHT_COLORS: LabeledInputCalendarColorPalette = {
+  primary: "#2563eb",
+  onPrimary: "#ffffff",
+  surface: "#ffffff",
+  onSurface: "#0f172a",
+  surfaceVariant: "#f1f5f9",
+  onSurfaceVariant: "#64748b",
+  outline: "#cbd5e1",
+  error: "#ef4444",
+  muted: "#94a3b8",
+  scrim: "rgba(0, 0, 0, 0.5)",
+};
+
+const DEFAULT_DARK_COLORS: LabeledInputCalendarColorPalette = {
+  primary: "#3b82f6",
+  onPrimary: "#ffffff",
+  surface: "#0f172a",
+  onSurface: "#f1f5f9",
+  surfaceVariant: "#1e293b",
+  onSurfaceVariant: "#94a3b8",
+  outline: "#475569",
+  error: "#f87171",
+  muted: "#475569",
+  scrim: "rgba(0, 0, 0, 0.5)",
 };
 
 const parseDateString = (dateString: string): Date | null => {
@@ -92,8 +137,44 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   locale = "en-US",
   isRTL = false,
   texts,
+  colors,
 }) => {
   const calendarTexts = { ...DEFAULT_TEXTS, ...texts };
+  const mergedColors = useMemo(
+    () => ({
+      light: { ...DEFAULT_LIGHT_COLORS, ...colors?.light },
+      dark: { ...DEFAULT_DARK_COLORS, ...colors?.dark },
+    }),
+    [colors],
+  );
+
+  const colorVariables = useMemo(
+    () =>
+      ({
+        "--lic-light-primary": mergedColors.light.primary,
+        "--lic-light-on-primary": mergedColors.light.onPrimary,
+        "--lic-light-surface": mergedColors.light.surface,
+        "--lic-light-on-surface": mergedColors.light.onSurface,
+        "--lic-light-surface-variant": mergedColors.light.surfaceVariant,
+        "--lic-light-on-surface-variant": mergedColors.light.onSurfaceVariant,
+        "--lic-light-outline": mergedColors.light.outline,
+        "--lic-light-error": mergedColors.light.error,
+        "--lic-light-muted": mergedColors.light.muted,
+        "--lic-light-scrim": mergedColors.light.scrim,
+        "--lic-dark-primary": mergedColors.dark.primary,
+        "--lic-dark-on-primary": mergedColors.dark.onPrimary,
+        "--lic-dark-surface": mergedColors.dark.surface,
+        "--lic-dark-on-surface": mergedColors.dark.onSurface,
+        "--lic-dark-surface-variant": mergedColors.dark.surfaceVariant,
+        "--lic-dark-on-surface-variant": mergedColors.dark.onSurfaceVariant,
+        "--lic-dark-outline": mergedColors.dark.outline,
+        "--lic-dark-error": mergedColors.dark.error,
+        "--lic-dark-muted": mergedColors.dark.muted,
+        "--lic-dark-scrim": mergedColors.dark.scrim,
+      }) as React.CSSProperties,
+    [mergedColors],
+  );
+
   const parsedValue = parseDateString(value);
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -348,7 +429,7 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           <div className="mb-4 text-center">
             <button
               onClick={() => setShowManualEntry(true)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:underline dark:text-slate-200"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--lic-primary)] hover:underline"
             >
               <Edit3 className="h-4 w-4" />
               {calendarTexts.enterDateManually}
@@ -359,7 +440,7 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="py-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400"
+                className="py-2 text-center text-xs font-medium text-[color:var(--lic-on-surface-variant)]"
               >
                 {day}
               </div>
@@ -379,17 +460,17 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                   onClick={() => handleDateSelect(date)}
                   disabled={disabled}
                   className={`aspect-square rounded-lg text-sm font-medium transition-all ${
-                    !currentMonthDay ? "text-slate-400 dark:text-slate-600" : ""
+                    !currentMonthDay ? "text-[color:var(--lic-muted)]" : ""
                   } ${
                     disabled
                       ? "cursor-not-allowed opacity-30"
-                      : "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                      : "cursor-pointer hover:bg-[color:var(--lic-surface-variant)]"
                   } ${
                     selected
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
                       : todayDate
-                        ? "border-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                        : "text-slate-900 dark:text-slate-100"
+                        ? "border-2 border-[color:var(--lic-primary)] text-[color:var(--lic-primary)]"
+                        : "text-[color:var(--lic-on-surface)]"
                   }`}
                 >
                   {date.getDate()}
@@ -401,17 +482,17 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
       )}
 
       {showManualEntry && (
-        <div className="mb-4 rounded-lg bg-slate-100 p-6 dark:bg-slate-800">
+        <div className="mb-4 rounded-lg bg-[color:var(--lic-surface-variant)] p-6">
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-base font-medium text-slate-900 dark:text-slate-100">
+            <div className="flex items-center gap-2 text-base font-medium text-[color:var(--lic-on-surface)]">
               <Edit3 className="h-5 w-5" />
               {calendarTexts.enterDateManually}
             </div>
             <button
               onClick={() => setShowManualEntry(false)}
-              className="rounded-full p-2 transition-all hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="rounded-full p-2 transition-all hover:bg-[color:var(--lic-surface)]"
             >
-              <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+              <X className="h-5 w-5 text-[color:var(--lic-on-surface-variant)]" />
             </button>
           </div>
           <div className="flex items-center justify-center gap-2">
@@ -422,9 +503,9 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.day}
               onChange={(e) => handleManualInputChange("day", e.target.value)}
               maxLength={2}
-              className="h-12 w-12 rounded border border-slate-300 bg-white text-center text-base text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
+              className="h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
             />
-            <span className="text-xl text-slate-500 dark:text-slate-400">
+            <span className="text-xl text-[color:var(--lic-on-surface-variant)]">
               /
             </span>
 
@@ -435,9 +516,9 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.month}
               onChange={(e) => handleManualInputChange("month", e.target.value)}
               maxLength={2}
-              className="h-12 w-12 rounded border border-slate-300 bg-white text-center text-base text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
+              className="h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
             />
-            <span className="text-xl text-slate-500 dark:text-slate-400">
+            <span className="text-xl text-[color:var(--lic-on-surface-variant)]">
               /
             </span>
 
@@ -448,12 +529,12 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.year}
               onChange={(e) => handleManualInputChange("year", e.target.value)}
               maxLength={4}
-              className="h-12 w-20 rounded border border-slate-300 bg-white text-center text-base text-slate-900 outline-none transition-all focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400"
+              className="h-12 w-20 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
             />
           </div>
           <button
             onClick={applyManualDate}
-            className="mt-4 h-10 w-full rounded-full bg-blue-600 text-sm font-medium text-white transition-all hover:shadow-md dark:bg-blue-500"
+            className="mt-4 h-10 w-full rounded-full bg-[color:var(--lic-primary)] text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md"
           >
             {calendarTexts.applyDate}
           </button>
@@ -469,10 +550,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           <button
             key={month}
             onClick={() => handleMonthSelect(index)}
-            className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-slate-100 dark:hover:bg-slate-800 ${
+            className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)] ${
               currentMonth.getMonth() === index
-                ? "bg-blue-600 text-white"
-                : "text-slate-900 dark:text-slate-100"
+                ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
+                : "text-[color:var(--lic-on-surface)]"
             }`}
           >
             {month}
@@ -493,10 +574,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
             <button
               key={year}
               onClick={() => handleYearSelect(year)}
-              className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-slate-100 dark:hover:bg-slate-800 ${
+              className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)] ${
                 currentYear === year
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-900 dark:text-slate-100"
+                  ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
+                  : "text-[color:var(--lic-on-surface)]"
               }`}
             >
               {year}
@@ -508,7 +589,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   };
 
   return (
-    <div className={`${className} flex flex-col`}>
+    <div
+      className={`${className} lic-root flex flex-col`}
+      style={colorVariables}
+    >
       <div className="relative">
         <input
           id={name}
@@ -517,10 +601,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           name={name}
           value={value ? formatDisplayDate(value) : ""}
           onClick={() => !isDisabled && setIsOpen(true)}
-          className={`peer h-14 w-full cursor-pointer rounded border bg-transparent px-4 pr-12 text-base text-slate-900 focus:outline-none dark:text-slate-100 ${
+          className={`peer h-14 w-full cursor-pointer rounded border bg-transparent px-4 pr-12 text-base text-[color:var(--lic-on-surface)] focus:outline-none ${
             isError
-              ? "border-2 border-red-500 dark:border-red-400"
-              : "border-slate-300 dark:border-slate-600"
+              ? "border-2 border-[color:var(--lic-error)]"
+              : "border-[color:var(--lic-outline)]"
           } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
         />
         <label
@@ -529,26 +613,26 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
             value
               ? "-top-2 px-1 text-xs"
               : "top-[16px] px-1 text-base peer-focus:-top-2 peer-focus:text-xs"
-          } ${bgColor} text-slate-700 dark:text-slate-200`}
+          } ${bgColor} text-[color:var(--lic-on-surface)]`}
         >
           {label || ""}
         </label>
         <Calendar
-          className={`pointer-events-none absolute ${isRTL ? "left-4" : "right-4"} top-[16px] h-5 w-5 text-slate-500 dark:text-slate-400`}
+          className={`pointer-events-none absolute ${isRTL ? "left-4" : "right-4"} top-[16px] h-5 w-5 text-[color:var(--lic-on-surface-variant)]`}
         />
       </div>
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--lic-scrim)]"
           onClick={() => setIsOpen(false)}
         >
           <div
-            className="mx-4 flex w-full max-w-md flex-col overflow-hidden rounded-[2rem] bg-white shadow-xl dark:bg-slate-900"
+            className="mx-4 flex w-full max-w-md flex-col overflow-hidden rounded-[2rem] bg-[color:var(--lic-surface)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
             style={{ animation: "scaleIn 0.2s ease-out" }}
           >
-            <div className="bg-blue-600 p-4 text-white dark:bg-blue-500">
+            <div className="bg-[color:var(--lic-primary)] p-4 text-[color:var(--lic-on-primary)]">
               {viewMode === "days" && (
                 <div className="flex items-center justify-between">
                   <button
@@ -647,7 +731,7 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="h-10 flex-1 rounded-full border border-slate-300 px-4 text-sm font-medium text-slate-700 transition-all hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="h-10 flex-1 rounded-full border border-[color:var(--lic-outline)] px-4 text-sm font-medium text-[color:var(--lic-primary)] transition-all hover:bg-[color:var(--lic-surface-variant)]"
                 >
                   {calendarTexts.cancel}
                 </button>
@@ -658,7 +742,7 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                       handleDateSelect(today);
                     }}
                     disabled={isDateDisabled(today)}
-                    className="h-10 flex-1 rounded-full bg-blue-600 px-4 text-sm font-medium text-white transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500"
+                    className="h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {calendarTexts.today}
                   </button>
@@ -673,7 +757,7 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                         setViewMode("days");
                       }
                     }}
-                    className="h-10 flex-1 rounded-full bg-blue-600 px-4 text-sm font-medium text-white transition-all hover:shadow-md dark:bg-blue-500"
+                    className="h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md"
                   >
                     {viewMode === "years"
                       ? calendarTexts.backToMonths
@@ -696,6 +780,33 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
             opacity: 1;
             transform: scale(1) translateY(0);
           }
+        }
+
+        .lic-root {
+          --lic-primary: var(--lic-light-primary);
+          --lic-on-primary: var(--lic-light-on-primary);
+          --lic-surface: var(--lic-light-surface);
+          --lic-on-surface: var(--lic-light-on-surface);
+          --lic-surface-variant: var(--lic-light-surface-variant);
+          --lic-on-surface-variant: var(--lic-light-on-surface-variant);
+          --lic-outline: var(--lic-light-outline);
+          --lic-error: var(--lic-light-error);
+          --lic-muted: var(--lic-light-muted);
+          --lic-scrim: var(--lic-light-scrim);
+        }
+
+        .dark .lic-root,
+        .lic-root.dark {
+          --lic-primary: var(--lic-dark-primary);
+          --lic-on-primary: var(--lic-dark-on-primary);
+          --lic-surface: var(--lic-dark-surface);
+          --lic-on-surface: var(--lic-dark-on-surface);
+          --lic-surface-variant: var(--lic-dark-surface-variant);
+          --lic-on-surface-variant: var(--lic-dark-on-surface-variant);
+          --lic-outline: var(--lic-dark-outline);
+          --lic-error: var(--lic-dark-error);
+          --lic-muted: var(--lic-dark-muted);
+          --lic-scrim: var(--lic-dark-scrim);
         }
       `}</style>
     </div>
