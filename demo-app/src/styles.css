@@ -114,7 +114,10 @@ body {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 200ms ease, filter 200ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
 }
 
 .mode-toggle {

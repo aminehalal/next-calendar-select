@@ -68,7 +68,11 @@ export default function App() {
               name="demoDate"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              texts={{ applyDate: "Apply date", cancel: "Close", today: "Today" }}
+              texts={{
+                applyDate: "Apply date",
+                cancel: "Close",
+                today: "Today",
+              }}
               colors={CALENDAR_COLORS}
               className={isDark ? "dark" : ""}
             />

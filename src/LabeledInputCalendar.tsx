@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { Calendar, ChevronLeft, ChevronRight, Edit3, X } from "lucide-react";
 
 export interface LabeledInputCalendarTexts {
@@ -122,6 +123,9 @@ const getWeekdayShortNames = (locale: string): string[] => {
     formatter.format(new Date(2024, 0, 7 + dayOffset)),
   );
 };
+
+const cx = (...classes: Array<string | false | null | undefined>): string =>
+  classes.filter(Boolean).join(" ");
 
 const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   label,
@@ -425,29 +429,42 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   const renderDaysView = () => (
     <>
       {!showManualEntry && (
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div
+          className={cx(
+            "lic-scroll-area",
+            "max-h-[calc(100vh-200px)] overflow-y-auto",
+          )}
+        >
           <div className="mb-4 text-center">
             <button
               onClick={() => setShowManualEntry(true)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--lic-primary)] hover:underline"
+              className={cx(
+                "lic-manual-toggle",
+                "inline-flex items-center gap-2 text-sm font-medium text-[color:var(--lic-primary)] hover:underline",
+              )}
             >
               <Edit3 className="h-4 w-4" />
               {calendarTexts.enterDateManually}
             </button>
           </div>
 
-          <div className="mb-2 grid grid-cols-7 gap-2">
+          <div
+            className={cx("lic-weekdays-grid", "mb-2 grid grid-cols-7 gap-2")}
+          >
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="py-2 text-center text-xs font-medium text-[color:var(--lic-on-surface-variant)]"
+                className={cx(
+                  "lic-weekday-cell",
+                  "py-2 text-center text-xs font-medium text-[color:var(--lic-on-surface-variant)]",
+                )}
               >
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className={cx("lic-days-grid", "grid grid-cols-7 gap-2")}>
             {days.map((date, index) => {
               const disabled = isDateDisabled(date);
               const selected = isSelectedDate(date);
@@ -459,19 +476,20 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                   key={`${date.toISOString()}-${index}`}
                   onClick={() => handleDateSelect(date)}
                   disabled={disabled}
-                  className={`aspect-square rounded-lg text-sm font-medium transition-all ${
-                    !currentMonthDay ? "text-[color:var(--lic-muted)]" : ""
-                  } ${
+                  className={cx(
+                    "lic-day-button",
+                    "aspect-square rounded-lg text-sm font-medium transition-all",
+                    !currentMonthDay &&
+                      "lic-day-outside text-[color:var(--lic-muted)]",
                     disabled
-                      ? "cursor-not-allowed opacity-30"
-                      : "cursor-pointer hover:bg-[color:var(--lic-surface-variant)]"
-                  } ${
+                      ? "lic-day-disabled cursor-not-allowed opacity-30"
+                      : "cursor-pointer hover:bg-[color:var(--lic-surface-variant)]",
                     selected
-                      ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
+                      ? "lic-day-selected bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
                       : todayDate
-                        ? "border-2 border-[color:var(--lic-primary)] text-[color:var(--lic-primary)]"
-                        : "text-[color:var(--lic-on-surface)]"
-                  }`}
+                        ? "lic-day-today border-2 border-[color:var(--lic-primary)] text-[color:var(--lic-primary)]"
+                        : "text-[color:var(--lic-on-surface)]",
+                  )}
                 >
                   {date.getDate()}
                 </button>
@@ -482,20 +500,43 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
       )}
 
       {showManualEntry && (
-        <div className="mb-4 rounded-lg bg-[color:var(--lic-surface-variant)] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-base font-medium text-[color:var(--lic-on-surface)]">
+        <div
+          className={cx(
+            "lic-manual-panel",
+            "mb-4 rounded-lg bg-[color:var(--lic-surface-variant)] p-6",
+          )}
+        >
+          <div
+            className={cx(
+              "lic-manual-header",
+              "mb-4 flex items-center justify-between",
+            )}
+          >
+            <div
+              className={cx(
+                "lic-manual-title",
+                "flex items-center gap-2 text-base font-medium text-[color:var(--lic-on-surface)]",
+              )}
+            >
               <Edit3 className="h-5 w-5" />
               {calendarTexts.enterDateManually}
             </div>
             <button
               onClick={() => setShowManualEntry(false)}
-              className="rounded-full p-2 transition-all hover:bg-[color:var(--lic-surface)]"
+              className={cx(
+                "lic-icon-button",
+                "rounded-full p-2 transition-all hover:bg-[color:var(--lic-surface)]",
+              )}
             >
               <X className="h-5 w-5 text-[color:var(--lic-on-surface-variant)]" />
             </button>
           </div>
-          <div className="flex items-center justify-center gap-2">
+          <div
+            className={cx(
+              "lic-manual-fields",
+              "flex items-center justify-center gap-2",
+            )}
+          >
             <input
               ref={dayRef}
               type="text"
@@ -503,7 +544,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.day}
               onChange={(e) => handleManualInputChange("day", e.target.value)}
               maxLength={2}
-              className="h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
+              className={cx(
+                "lic-manual-input",
+                "h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]",
+              )}
             />
             <span className="text-xl text-[color:var(--lic-on-surface-variant)]">
               /
@@ -516,7 +560,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.month}
               onChange={(e) => handleManualInputChange("month", e.target.value)}
               maxLength={2}
-              className="h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
+              className={cx(
+                "lic-manual-input",
+                "h-12 w-12 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]",
+              )}
             />
             <span className="text-xl text-[color:var(--lic-on-surface-variant)]">
               /
@@ -529,12 +576,18 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               value={manualInput.year}
               onChange={(e) => handleManualInputChange("year", e.target.value)}
               maxLength={4}
-              className="h-12 w-20 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]"
+              className={cx(
+                "lic-manual-input lic-manual-input-year",
+                "h-12 w-20 rounded border border-[color:var(--lic-outline)] bg-[color:var(--lic-surface)] text-center text-base text-[color:var(--lic-on-surface)] outline-none transition-all focus:border-[color:var(--lic-primary)]",
+              )}
             />
           </div>
           <button
             onClick={applyManualDate}
-            className="mt-4 h-10 w-full rounded-full bg-[color:var(--lic-primary)] text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md"
+            className={cx(
+              "lic-manual-apply",
+              "mt-4 h-10 w-full rounded-full bg-[color:var(--lic-primary)] text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md",
+            )}
           >
             {calendarTexts.applyDate}
           </button>
@@ -544,17 +597,24 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   );
 
   const renderMonthsView = () => (
-    <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-      <div className="grid grid-cols-4 gap-3">
+    <div
+      className={cx(
+        "lic-scroll-area",
+        "max-h-[calc(100vh-200px)] overflow-y-auto",
+      )}
+    >
+      <div className={cx("lic-picker-grid", "grid grid-cols-4 gap-3")}>
         {months.map((month, index) => (
           <button
             key={month}
             onClick={() => handleMonthSelect(index)}
-            className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)] ${
+            className={cx(
+              "lic-picker-button",
+              "aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)]",
               currentMonth.getMonth() === index
-                ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
-                : "text-[color:var(--lic-on-surface)]"
-            }`}
+                ? "lic-picker-button-selected bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
+                : "text-[color:var(--lic-on-surface)]",
+            )}
           >
             {month}
           </button>
@@ -568,17 +628,24 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
     const currentYear = currentMonth.getFullYear();
 
     return (
-      <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-        <div className="grid grid-cols-4 gap-3">
+      <div
+        className={cx(
+          "lic-scroll-area",
+          "max-h-[calc(100vh-200px)] overflow-y-auto",
+        )}
+      >
+        <div className={cx("lic-picker-grid", "grid grid-cols-4 gap-3")}>
           {years.map((year) => (
             <button
               key={year}
               onClick={() => handleYearSelect(year)}
-              className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)] ${
+              className={cx(
+                "lic-picker-button",
+                "aspect-square rounded-lg text-sm font-medium transition-all hover:bg-[color:var(--lic-surface-variant)]",
                 currentYear === year
-                  ? "bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
-                  : "text-[color:var(--lic-on-surface)]"
-              }`}
+                  ? "lic-picker-button-selected bg-[color:var(--lic-primary)] text-[color:var(--lic-on-primary)]"
+                  : "text-[color:var(--lic-on-surface)]",
+              )}
             >
               {year}
             </button>
@@ -590,10 +657,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
 
   return (
     <div
-      className={`${className} lic-root flex flex-col`}
+      className={`${className} lic-root lic-host flex flex-col`}
       style={colorVariables}
     >
-      <div className="relative">
+      <div className="relative lic-input-wrap">
         <input
           id={name}
           type="text"
@@ -601,43 +668,67 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           name={name}
           value={value ? formatDisplayDate(value) : ""}
           onClick={() => !isDisabled && setIsOpen(true)}
-          className={`peer h-14 w-full cursor-pointer rounded border bg-transparent px-4 pr-12 text-base text-[color:var(--lic-on-surface)] focus:outline-none ${
+          className={`peer lic-input h-14 w-full cursor-pointer rounded border bg-transparent px-4 pr-12 text-base text-[color:var(--lic-on-surface)] focus:outline-none ${
             isError
-              ? "border-2 border-[color:var(--lic-error)]"
+              ? "lic-input-error border-2 border-[color:var(--lic-error)]"
               : "border-[color:var(--lic-outline)]"
-          } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+          } ${isDisabled ? "lic-input-disabled cursor-not-allowed opacity-50" : ""}`}
         />
         <label
           htmlFor={name}
-          className={`pointer-events-none absolute ${isRTL ? "right-4" : "left-4"} transform transition-all duration-200 ${
+          className={cx(
+            "lic-label",
+            "pointer-events-none absolute transform transition-all duration-200",
+            isRTL ? "right-4" : "left-4",
             value
-              ? "-top-2 px-1 text-xs"
-              : "top-[16px] px-1 text-base peer-focus:-top-2 peer-focus:text-xs"
-          } ${bgColor} text-[color:var(--lic-on-surface)]`}
+              ? "lic-label-float -top-2 px-1 text-xs"
+              : "lic-label-rest top-[16px] px-1 text-base peer-focus:-top-2 peer-focus:text-xs",
+            bgColor,
+            "text-[color:var(--lic-on-surface)]",
+          )}
+          style={isRTL ? { right: 16 } : { left: 16 }}
         >
           {label || ""}
         </label>
         <Calendar
-          className={`pointer-events-none absolute ${isRTL ? "left-4" : "right-4"} top-[16px] h-5 w-5 text-[color:var(--lic-on-surface-variant)]`}
+          className={`lic-input-icon pointer-events-none absolute ${isRTL ? "left-4" : "right-4"} top-[16px] h-5 w-5 text-[color:var(--lic-on-surface-variant)]`}
+          style={isRTL ? { left: 16 } : { right: 16 }}
         />
       </div>
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--lic-scrim)]"
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="mx-4 flex w-full max-w-md flex-col overflow-hidden rounded-[2rem] bg-[color:var(--lic-surface)] shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: "scaleIn 0.2s ease-out" }}
+      <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            className={cx(
+              "lic-overlay",
+              "fixed inset-0 z-50 bg-[color:var(--lic-scrim)]",
+            )}
+          />
+          <Dialog.Content
+            className={cx(
+              "lic-dialog",
+              "fixed left-1/2 top-1/2 z-50 mx-4 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[2rem] bg-[color:var(--lic-surface)] shadow-xl",
+            )}
           >
-            <div className="bg-[color:var(--lic-primary)] p-4 text-[color:var(--lic-on-primary)]">
+            <div
+              className={cx(
+                "lic-dialog-header",
+                "bg-[color:var(--lic-primary)] p-4 text-[color:var(--lic-on-primary)]",
+              )}
+            >
               {viewMode === "days" && (
-                <div className="flex items-center justify-between">
+                <div
+                  className={cx(
+                    "lic-header-row",
+                    "flex items-center justify-between",
+                  )}
+                >
                   <button
                     onClick={handlePrevMonth}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </button>
@@ -648,7 +739,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                         setViewMode("months");
                         setShowManualEntry(false);
                       }}
-                      className="rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10"
+                      className={cx(
+                        "lic-title-button",
+                        "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
+                      )}
                     >
                       {currentMonth.toLocaleDateString(locale, {
                         month: "long",
@@ -659,7 +753,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                         setViewMode("years");
                         setShowManualEntry(false);
                       }}
-                      className="rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10"
+                      className={cx(
+                        "lic-title-button",
+                        "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
+                      )}
                     >
                       {currentMonth.getFullYear()}
                     </button>
@@ -667,7 +764,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
 
                   <button
                     onClick={handleNextMonth}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
@@ -675,24 +775,38 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               )}
 
               {viewMode === "months" && (
-                <div className="flex items-center justify-between">
+                <div
+                  className={cx(
+                    "lic-header-row",
+                    "flex items-center justify-between",
+                  )}
+                >
                   <button
                     onClick={handlePrevYear}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </button>
 
                   <button
                     onClick={() => setViewMode("years")}
-                    className="rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-title-button",
+                      "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
+                    )}
                   >
                     {currentMonth.getFullYear()}
                   </button>
 
                   <button
                     onClick={handleNextYear}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
@@ -700,22 +814,33 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               )}
 
               {viewMode === "years" && (
-                <div className="flex items-center justify-between">
+                <div
+                  className={cx(
+                    "lic-header-row",
+                    "flex items-center justify-between",
+                  )}
+                >
                   <button
                     onClick={handlePrevYearRange}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </button>
 
-                  <div className="text-lg font-medium">
+                  <div className={cx("lic-range-title", "text-lg font-medium")}>
                     {getYearsRange()[0]} -{" "}
                     {getYearsRange()[getYearsRange().length - 1]}
                   </div>
 
                   <button
                     onClick={handleNextYearRange}
-                    className="rounded-full p-2 transition-all hover:bg-white/10"
+                    className={cx(
+                      "lic-icon-button",
+                      "rounded-full p-2 transition-all hover:bg-white/10",
+                    )}
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
@@ -723,15 +848,18 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
               )}
             </div>
 
-            <div className="p-6">
+            <div className={cx("lic-dialog-body", "p-6")}>
               {viewMode === "days" && renderDaysView()}
               {viewMode === "months" && renderMonthsView()}
               {viewMode === "years" && renderYearsView()}
 
-              <div className="mt-6 flex gap-3">
+              <div className={cx("lic-actions", "mt-6 flex gap-3")}>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="h-10 flex-1 rounded-full border border-[color:var(--lic-outline)] px-4 text-sm font-medium text-[color:var(--lic-primary)] transition-all hover:bg-[color:var(--lic-surface-variant)]"
+                  className={cx(
+                    "lic-action-button lic-action-button-secondary",
+                    "h-10 flex-1 rounded-full border border-[color:var(--lic-outline)] px-4 text-sm font-medium text-[color:var(--lic-primary)] transition-all hover:bg-[color:var(--lic-surface-variant)]",
+                  )}
                 >
                   {calendarTexts.cancel}
                 </button>
@@ -742,7 +870,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                       handleDateSelect(today);
                     }}
                     disabled={isDateDisabled(today)}
-                    className="h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    className={cx(
+                      "lic-action-button lic-action-button-primary",
+                      "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
                   >
                     {calendarTexts.today}
                   </button>
@@ -757,7 +888,10 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                         setViewMode("days");
                       }
                     }}
-                    className="h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md"
+                    className={cx(
+                      "lic-action-button lic-action-button-primary",
+                      "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md",
+                    )}
                   >
                     {viewMode === "years"
                       ? calendarTexts.backToMonths
@@ -766,12 +900,12 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <style>{`
-        @keyframes scaleIn {
+        @keyframes licScaleIn {
           from {
             opacity: 0;
             transform: scale(0.9) translateY(-20px);
@@ -779,6 +913,388 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           to {
             opacity: 1;
             transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes licOverlayIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes licOverlayOut {
+          from {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+          }
+        }
+
+        @keyframes licScaleOut {
+          from {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: scale(0.95) translateY(-8px);
+          }
+        }
+
+        .lic-host {
+          position: relative;
+          width: 100%;
+          font-family: inherit;
+        }
+
+        .lic-input-wrap {
+          position: relative;
+        }
+
+        .lic-input {
+          box-sizing: border-box;
+          width: 100%;
+          min-height: 56px;
+          padding: 0 48px 0 16px;
+          border-radius: 0.5rem;
+          border: 1px solid var(--lic-outline);
+          background: transparent;
+          color: var(--lic-on-surface);
+          font-size: 1rem;
+          cursor: pointer;
+        }
+
+        .lic-input:focus {
+          outline: none;
+        }
+
+        .lic-input.lic-input-error {
+          border-color: var(--lic-error);
+          border-width: 2px;
+        }
+
+        .lic-input.lic-input-disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .lic-label {
+          position: absolute;
+          z-index: 1;
+          top: 16px;
+          line-height: 1;
+          padding: 0 4px;
+          background: var(--lic-surface);
+          color: var(--lic-on-surface);
+        }
+
+        .lic-label-rest {
+          font-size: 1rem;
+        }
+
+        .lic-label-float {
+          top: -8px;
+          font-size: 0.75rem;
+        }
+
+        .lic-input:focus + .lic-label.lic-label-rest {
+          top: -8px;
+          font-size: 0.75rem;
+        }
+
+        .lic-input-icon {
+          position: absolute;
+          top: 16px;
+          width: 20px;
+          height: 20px;
+          color: var(--lic-on-surface-variant);
+        }
+
+        .lic-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: var(--lic-scrim);
+        }
+
+        .lic-overlay[data-state="open"] {
+          animation: licOverlayIn 160ms ease-out;
+        }
+
+        .lic-overlay[data-state="closed"] {
+          animation: licOverlayOut 120ms ease-in;
+        }
+
+        .lic-dialog {
+          width: min(100%, 28rem);
+          max-height: min(90vh, 760px);
+          display: flex;
+          flex-direction: column;
+          border-radius: 2rem;
+          overflow: hidden;
+          background: var(--lic-surface);
+          color: var(--lic-on-surface);
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35);
+        }
+
+        .lic-dialog[data-state="open"] {
+          animation: licScaleIn 200ms ease-out;
+        }
+
+        .lic-dialog[data-state="closed"] {
+          animation: licScaleOut 140ms ease-in;
+        }
+
+        .lic-dialog-header {
+          background: var(--lic-primary);
+          color: var(--lic-on-primary);
+          padding: 16px;
+        }
+
+        .lic-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .lic-icon-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: inherit;
+          cursor: pointer;
+        }
+
+        .lic-title-button {
+          padding: 4px 12px;
+          border: 0;
+          border-radius: 0.5rem;
+          background: transparent;
+          color: inherit;
+          font-size: 1.125rem;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .lic-range-title {
+          text-align: center;
+        }
+
+        .lic-dialog-body {
+          padding: 24px;
+          color: var(--lic-on-surface);
+        }
+
+        .lic-scroll-area {
+          max-height: calc(100vh - 220px);
+          overflow-y: auto;
+        }
+
+        .lic-manual-toggle {
+          border: 0;
+          background: transparent;
+          color: var(--lic-primary);
+          cursor: pointer;
+          font-weight: 500;
+        }
+
+        .lic-weekdays-grid,
+        .lic-days-grid {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .lic-weekday-cell {
+          text-align: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--lic-on-surface-variant);
+        }
+
+        .lic-day-button {
+          aspect-ratio: 1 / 1;
+          border: 0;
+          border-radius: 0.5rem;
+          background: transparent;
+          color: var(--lic-on-surface);
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background-color 0.15s ease, color 0.15s ease,
+            transform 0.1s ease;
+        }
+
+        .lic-day-button:not(.lic-day-disabled):hover {
+          background: var(--lic-surface-variant);
+        }
+
+        .lic-day-button.lic-day-outside {
+          color: var(--lic-muted);
+        }
+
+        .lic-day-button.lic-day-disabled {
+          opacity: 0.32;
+          cursor: not-allowed;
+        }
+
+        .lic-day-button.lic-day-selected {
+          background: var(--lic-primary);
+          color: var(--lic-on-primary);
+        }
+
+        .lic-day-button.lic-day-today {
+          border: 2px solid var(--lic-primary);
+          color: var(--lic-primary);
+        }
+
+        .lic-manual-panel {
+          border-radius: 0.75rem;
+          background: var(--lic-surface-variant);
+          margin-bottom: 16px;
+          padding: 24px;
+        }
+
+        .lic-manual-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          gap: 8px;
+        }
+
+        .lic-manual-title {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--lic-on-surface);
+          font-weight: 600;
+        }
+
+        .lic-manual-fields {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .lic-manual-input {
+          box-sizing: border-box;
+          width: 48px;
+          height: 48px;
+          border-radius: 0.375rem;
+          border: 1px solid var(--lic-outline);
+          background: var(--lic-surface);
+          color: var(--lic-on-surface);
+          text-align: center;
+          font-size: 1rem;
+        }
+
+        .lic-manual-input:focus {
+          outline: none;
+          border-color: var(--lic-primary);
+        }
+
+        .lic-manual-input-year {
+          width: 80px;
+        }
+
+        .lic-manual-apply {
+          margin-top: 16px;
+          width: 100%;
+          height: 40px;
+          border: 0;
+          border-radius: 999px;
+          background: var(--lic-primary);
+          color: var(--lic-on-primary);
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .lic-picker-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .lic-picker-button {
+          aspect-ratio: 1 / 1;
+          border: 0;
+          border-radius: 0.5rem;
+          background: transparent;
+          color: var(--lic-on-surface);
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .lic-picker-button:hover {
+          background: var(--lic-surface-variant);
+        }
+
+        .lic-picker-button-selected {
+          background: var(--lic-primary);
+          color: var(--lic-on-primary);
+        }
+
+        .lic-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 24px;
+        }
+
+        .lic-action-button {
+          height: 40px;
+          flex: 1;
+          border-radius: 999px;
+          padding: 0 16px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .lic-action-button-secondary {
+          border: 1px solid var(--lic-outline);
+          background: transparent;
+          color: var(--lic-primary);
+        }
+
+        .lic-action-button-secondary:hover {
+          background: var(--lic-surface-variant);
+        }
+
+        .lic-action-button-primary {
+          border: 0;
+          background: var(--lic-primary);
+          color: var(--lic-on-primary);
+        }
+
+        .lic-action-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        @media (max-width: 520px) {
+          .lic-dialog {
+            width: min(100%, 24rem);
+            border-radius: 1.25rem;
+          }
+
+          .lic-dialog-body {
+            padding: 16px;
+          }
+
+          .lic-actions {
+            flex-direction: column;
           }
         }
 
