@@ -1,6 +1,6 @@
 {
   "name": "next-calendar-select",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Reusable labeled date input calendar component for React and Next.js",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -35,6 +35,14 @@
   ],
   "author": "Amine Halal",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aminehalal/next-calendar-select.git"
+  },
+  "homepage": "https://github.com/aminehalal/next-calendar-select#readme",
+  "bugs": {
+    "url": "https://github.com/aminehalal/next-calendar-select/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -43,7 +51,6 @@
     "react-dom": ">=18"
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.14",
     "lucide-react": "^0.510.0"
   },
   "devDependencies": {
