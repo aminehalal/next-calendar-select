@@ -1,6 +1,6 @@
 {
   "name": "next-calendar-select",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Reusable labeled date input calendar component for React and Next.js",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

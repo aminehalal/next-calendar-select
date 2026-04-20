@@ -2,6 +2,8 @@
 
 Reusable labeled date input calendar component for React and Next.js.
 
+Version: 1.4.0
+
 ## Why this package
 
 - Standalone component without app-only hooks.
@@ -169,6 +171,11 @@ npm login
 npm run build
 npm publish --access public
 ```
+
+Notes about v1.4.0
+
+- The modal implementation was changed to use the native HTML `<dialog>` element (opened with `showModal()`), avoiding the need for React portals. This ensures the dialog displays correctly even when the consumer app uses CSS transforms, filters, or backdrop-blur which can clip fixed-position overlays.
+- The component still exports the same API; no prop changes were required. Accessibility labels (`dialogTitle` and `dialogDescription`) are provided via `texts` props and included inside the dialog for screen readers.
 
 4. Push your code and tags to GitHub:
 

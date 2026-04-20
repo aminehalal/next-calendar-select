@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import { Calendar, ChevronLeft, ChevronRight, Edit3, X } from "lucide-react";
 
 export interface LabeledInputCalendarTexts {
@@ -9,6 +8,8 @@ export interface LabeledInputCalendarTexts {
   applyDate: string;
   cancel: string;
   today: string;
+  dialogTitle: string;
+  dialogDescription: string;
   backToMonths: string;
   backToDays: string;
   dateNotAvailable: string;
@@ -56,6 +57,9 @@ const DEFAULT_TEXTS: LabeledInputCalendarTexts = {
   applyDate: "Apply date",
   cancel: "Cancel",
   today: "Today",
+  dialogTitle: "Choose a date",
+  dialogDescription:
+    "Use this calendar to choose a date or enter one manually.",
   backToMonths: "Back to months",
   backToDays: "Back to days",
   dateNotAvailable: "This date is not available.",
@@ -196,12 +200,18 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
   const dayRef = useRef<HTMLInputElement>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDialogElement>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const weekDays = useMemo(() => getWeekdayShortNames(locale), [locale]);
   const months = useMemo(() => getMonthShortNames(locale), [locale]);
+  const dialogTitleId = useMemo(() => `${name}-lic-dialog-title`, [name]);
+  const dialogDescriptionId = useMemo(
+    () => `${name}-lic-dialog-description`,
+    [name],
+  );
 
   useEffect(() => {
     const parsed = parseDateString(value);
@@ -229,6 +239,55 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
     setViewMode("days");
     setShowManualEntry(false);
   }, [isOpen, value]);
+
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    if (isOpen) {
+      if (!modal.open) {
+        if (typeof modal.showModal === "function") {
+          modal.showModal();
+        } else {
+          modal.setAttribute("open", "true");
+        }
+      }
+      return;
+    }
+
+    if (modal.open) {
+      modal.close();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  const handleDialogMouseDown = (
+    event: React.MouseEvent<HTMLDialogElement>,
+  ) => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const rect = modal.getBoundingClientRect();
+    const clickedInside =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    if (!clickedInside) {
+      setIsOpen(false);
+    }
+  };
 
   const formatDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -696,103 +755,68 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
         />
       </div>
 
-      <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay
+      <dialog
+        ref={modalRef}
+        aria-labelledby={dialogTitleId}
+        aria-describedby={dialogDescriptionId}
+        className="lic-native-dialog"
+        onClose={() => setIsOpen(false)}
+        onCancel={(event) => {
+          event.preventDefault();
+          setIsOpen(false);
+        }}
+        onMouseDown={handleDialogMouseDown}
+      >
+        <div className={cx("lic-dialog")}>
+          <h2 id={dialogTitleId} className="lic-visually-hidden">
+            {label || calendarTexts.dialogTitle}
+          </h2>
+          <p id={dialogDescriptionId} className="lic-visually-hidden">
+            {calendarTexts.dialogDescription}
+          </p>
+          <div
             className={cx(
-              "lic-overlay",
-              "fixed inset-0 z-50 bg-[color:var(--lic-scrim)]",
-            )}
-          />
-          <Dialog.Content
-            className={cx(
-              "lic-dialog",
-              "fixed left-1/2 top-1/2 z-50 mx-4 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[2rem] bg-[color:var(--lic-surface)] shadow-xl",
+              "lic-dialog-header",
+              "bg-[color:var(--lic-primary)] p-4 text-[color:var(--lic-on-primary)]",
             )}
           >
-            <div
-              className={cx(
-                "lic-dialog-header",
-                "bg-[color:var(--lic-primary)] p-4 text-[color:var(--lic-on-primary)]",
-              )}
-            >
-              {viewMode === "days" && (
-                <div
+            {viewMode === "days" && (
+              <div
+                className={cx(
+                  "lic-header-row",
+                  "flex items-center justify-between",
+                )}
+              >
+                <button
+                  onClick={handlePrevMonth}
                   className={cx(
-                    "lic-header-row",
-                    "flex items-center justify-between",
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
                   )}
                 >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+
+                <div className="flex gap-2">
                   <button
-                    onClick={handlePrevMonth}
+                    onClick={() => {
+                      setViewMode("months");
+                      setShowManualEntry(false);
+                    }}
                     className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
+                      "lic-title-button",
+                      "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
                     )}
                   >
-                    <ChevronLeft className="h-6 w-6" />
+                    {currentMonth.toLocaleDateString(locale, {
+                      month: "long",
+                    })}
                   </button>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setViewMode("months");
-                        setShowManualEntry(false);
-                      }}
-                      className={cx(
-                        "lic-title-button",
-                        "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
-                      )}
-                    >
-                      {currentMonth.toLocaleDateString(locale, {
-                        month: "long",
-                      })}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setViewMode("years");
-                        setShowManualEntry(false);
-                      }}
-                      className={cx(
-                        "lic-title-button",
-                        "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
-                      )}
-                    >
-                      {currentMonth.getFullYear()}
-                    </button>
-                  </div>
-
                   <button
-                    onClick={handleNextMonth}
-                    className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
-                    )}
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </div>
-              )}
-
-              {viewMode === "months" && (
-                <div
-                  className={cx(
-                    "lic-header-row",
-                    "flex items-center justify-between",
-                  )}
-                >
-                  <button
-                    onClick={handlePrevYear}
-                    className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
-                    )}
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-
-                  <button
-                    onClick={() => setViewMode("years")}
+                    onClick={() => {
+                      setViewMode("years");
+                      setShowManualEntry(false);
+                    }}
                     className={cx(
                       "lic-title-button",
                       "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
@@ -800,109 +824,148 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
                   >
                     {currentMonth.getFullYear()}
                   </button>
-
-                  <button
-                    onClick={handleNextYear}
-                    className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
-                    )}
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
                 </div>
-              )}
 
-              {viewMode === "years" && (
-                <div
-                  className={cx(
-                    "lic-header-row",
-                    "flex items-center justify-between",
-                  )}
-                >
-                  <button
-                    onClick={handlePrevYearRange}
-                    className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
-                    )}
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-
-                  <div className={cx("lic-range-title", "text-lg font-medium")}>
-                    {getYearsRange()[0]} -{" "}
-                    {getYearsRange()[getYearsRange().length - 1]}
-                  </div>
-
-                  <button
-                    onClick={handleNextYearRange}
-                    className={cx(
-                      "lic-icon-button",
-                      "rounded-full p-2 transition-all hover:bg-white/10",
-                    )}
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className={cx("lic-dialog-body", "p-6")}>
-              {viewMode === "days" && renderDaysView()}
-              {viewMode === "months" && renderMonthsView()}
-              {viewMode === "years" && renderYearsView()}
-
-              <div className={cx("lic-actions", "mt-6 flex gap-3")}>
                 <button
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleNextMonth}
                   className={cx(
-                    "lic-action-button lic-action-button-secondary",
-                    "h-10 flex-1 rounded-full border border-[color:var(--lic-outline)] px-4 text-sm font-medium text-[color:var(--lic-primary)] transition-all hover:bg-[color:var(--lic-surface-variant)]",
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
                   )}
                 >
-                  {calendarTexts.cancel}
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
+
+            {viewMode === "months" && (
+              <div
+                className={cx(
+                  "lic-header-row",
+                  "flex items-center justify-between",
+                )}
+              >
+                <button
+                  onClick={handlePrevYear}
+                  className={cx(
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
+                  )}
+                >
+                  <ChevronLeft className="h-6 w-6" />
                 </button>
 
-                {viewMode === "days" && (
-                  <button
-                    onClick={() => {
-                      handleDateSelect(today);
-                    }}
-                    disabled={isDateDisabled(today)}
-                    className={cx(
-                      "lic-action-button lic-action-button-primary",
-                      "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
-                    )}
-                  >
-                    {calendarTexts.today}
-                  </button>
-                )}
+                <button
+                  onClick={() => setViewMode("years")}
+                  className={cx(
+                    "lic-title-button",
+                    "rounded-lg px-3 py-1 text-lg font-medium transition-all hover:bg-white/10",
+                  )}
+                >
+                  {currentMonth.getFullYear()}
+                </button>
 
-                {viewMode !== "days" && (
-                  <button
-                    onClick={() => {
-                      if (viewMode === "years") {
-                        setViewMode("months");
-                      } else if (viewMode === "months") {
-                        setViewMode("days");
-                      }
-                    }}
-                    className={cx(
-                      "lic-action-button lic-action-button-primary",
-                      "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md",
-                    )}
-                  >
-                    {viewMode === "years"
-                      ? calendarTexts.backToMonths
-                      : calendarTexts.backToDays}
-                  </button>
-                )}
+                <button
+                  onClick={handleNextYear}
+                  className={cx(
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
+                  )}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
               </div>
+            )}
+
+            {viewMode === "years" && (
+              <div
+                className={cx(
+                  "lic-header-row",
+                  "flex items-center justify-between",
+                )}
+              >
+                <button
+                  onClick={handlePrevYearRange}
+                  className={cx(
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
+                  )}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+
+                <div className={cx("lic-range-title", "text-lg font-medium")}>
+                  {getYearsRange()[0]} -{" "}
+                  {getYearsRange()[getYearsRange().length - 1]}
+                </div>
+
+                <button
+                  onClick={handleNextYearRange}
+                  className={cx(
+                    "lic-icon-button",
+                    "rounded-full p-2 transition-all hover:bg-white/10",
+                  )}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className={cx("lic-dialog-body", "p-6")}>
+            {viewMode === "days" && renderDaysView()}
+            {viewMode === "months" && renderMonthsView()}
+            {viewMode === "years" && renderYearsView()}
+
+            <div className={cx("lic-actions", "mt-6 flex gap-3")}>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={cx(
+                  "lic-action-button lic-action-button-secondary",
+                  "h-10 flex-1 rounded-full border border-[color:var(--lic-outline)] px-4 text-sm font-medium text-[color:var(--lic-primary)] transition-all hover:bg-[color:var(--lic-surface-variant)]",
+                )}
+              >
+                {calendarTexts.cancel}
+              </button>
+
+              {viewMode === "days" && (
+                <button
+                  onClick={() => {
+                    handleDateSelect(today);
+                  }}
+                  disabled={isDateDisabled(today)}
+                  className={cx(
+                    "lic-action-button lic-action-button-primary",
+                    "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
+                  )}
+                >
+                  {calendarTexts.today}
+                </button>
+              )}
+
+              {viewMode !== "days" && (
+                <button
+                  onClick={() => {
+                    if (viewMode === "years") {
+                      setViewMode("months");
+                    } else if (viewMode === "months") {
+                      setViewMode("days");
+                    }
+                  }}
+                  className={cx(
+                    "lic-action-button lic-action-button-primary",
+                    "h-10 flex-1 rounded-full bg-[color:var(--lic-primary)] px-4 text-sm font-medium text-[color:var(--lic-on-primary)] transition-all hover:shadow-md",
+                  )}
+                >
+                  {viewMode === "years"
+                    ? calendarTexts.backToMonths
+                    : calendarTexts.backToDays}
+                </button>
+              )}
             </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          </div>
+        </div>
+      </dialog>
 
       <style>{`
         @keyframes licScaleIn {
@@ -1014,11 +1077,37 @@ const LabeledInputCalendar: React.FC<LabeledInputCalendarProps> = ({
           color: var(--lic-on-surface-variant);
         }
 
-        .lic-overlay {
+        .lic-native-dialog {
           position: fixed;
-          inset: 0;
-          z-index: 9999;
-          background: var(--lic-scrim);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 2rem;
+          width: min(calc(100vw - 2rem), 28rem);
+          max-height: min(90vh, 760px);
+          overflow: visible;
+          background: transparent;
+          color: inherit;
+        }
+
+        .lic-native-dialog::backdrop {
+          background: rgba(0, 0, 0, 0.7);
+          animation: licOverlayIn 160ms ease-out;
+        }
+
+        .lic-visually-hidden {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
 
         .lic-overlay[data-state="open"] {
